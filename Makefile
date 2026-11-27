@@ -27,7 +27,7 @@ validate:
 	cd code && $(PY) validate.py
 
 paper:
-	pdflatex -interaction=nonstopmode main >/dev/null && bibtex main >/dev/null && pdflatex -interaction=nonstopmode main >/dev/null && pdflatex -interaction=nonstopmode main >/dev/null
+	for f in main main_neurips; do pdflatex -interaction=nonstopmode $$f >/dev/null && bibtex $$f >/dev/null && pdflatex -interaction=nonstopmode $$f >/dev/null && pdflatex -interaction=nonstopmode $$f >/dev/null; done
 
 # Fast end-to-end test of the whole pipeline on a tiny budget (numbers are meaningless; checks the plumbing).
 smoke:

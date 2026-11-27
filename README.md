@@ -22,7 +22,9 @@ An earlier full run with unseeded weight initialization (`code/results_unseeded_
 ## Repository layout
 
 ```
-main.tex, refs.bib        paper source (NeurIPS layout; neurips_replica.sty -> swap for official neurips_2026.sty)         numbers.tex   all paper numbers (GENERATED, do not edit)
+main.tex                  paper (single-column preprint, primary version)
+main_neurips.tex          same results in NeurIPS layout (neurips_replica.sty -> swap for official neurips_2026.sty)
+refs.bib                  bibliography         numbers.tex   all paper numbers (GENERATED, do not edit)
 main.pdf                  compiled paper       fig_*.pdf     figures (GENERATED)
 code/wm.py                simulator, renderer, world model, training
 code/run.py               train one (condition, seed) and evaluate: behavior, probes, interventions, monitors

@@ -2,6 +2,12 @@
 
 Bugs found by the validation and triangulation suite are recorded here, together with how each one affected the reported results.
 
+## v1.2 (2026-11-27)
+- The primary paper (`main.tex`) is now a single-column, argument-led preprint in the style of LeCun's position papers. Every section opens with theory: an energy-based framing of planning; a new Proposition (off-support exploitation); formal definitions of representation and causal use.
+- New diagrams: an energy landscape showing how a planner finds model errors, and a ladder of evidence mapped to World Model Lens primitives.
+- Cites World Model Lens (Challagundla, 2026) as tooling. The paper states explicitly that the experiments use a self-contained harness rather than WML.
+- The NeurIPS-format version is kept as `main_neurips.tex`.
+
 ## v1.1 (2026-11-27)
 - NeurIPS-format rewrite, with new figures (teaser of causal graphs, agent architecture, model inputs, planner).
 - **New experiment:** a planner using the trained models confirms Proposition 3. At N=64, realized cost is about 12x the predicted cost. New claims C10-C12; 21/21 pass.

@@ -1,0 +1,62 @@
+{
+ "clean_s0": {
+  "cos_gravity_vs_colour_probe": 0.1943250149488449,
+  "steer_colour_angle_shift_hH": 0.01521456241607666,
+  "steer_random_angle_shift_hH": 0.0372895672917366,
+  "steer_colour_probe_g_shift_per_unit_redness": 2.643148183822632
+ },
+ "confounded_s0": {
+  "cos_gravity_vs_colour_probe": 0.9965583086013794,
+  "steer_colour_angle_shift_hH": 0.019488763064146042,
+  "steer_random_angle_shift_hH": 0.020904378965497017,
+  "steer_colour_probe_g_shift_per_unit_redness": 7.903002738952637
+ },
+ "clean_s1": {
+  "cos_gravity_vs_colour_probe": -0.03496309369802475,
+  "steer_colour_angle_shift_hH": 0.008524595759809017,
+  "steer_random_angle_shift_hH": 0.00855220202356577,
+  "steer_colour_probe_g_shift_per_unit_redness": -0.345863401889801
+ },
+ "confounded_s1": {
+  "cos_gravity_vs_colour_probe": 0.9987490773200989,
+  "steer_colour_angle_shift_hH": 0.007229359820485115,
+  "steer_random_angle_shift_hH": 0.01689719222486019,
+  "steer_colour_probe_g_shift_per_unit_redness": 7.874208927154541
+ },
+ "clean_s2": {
+  "cos_gravity_vs_colour_probe": 0.19345957040786743,
+  "steer_colour_angle_shift_hH": 0.004996563773602247,
+  "steer_random_angle_shift_hH": 0.009749628603458405,
+  "steer_colour_probe_g_shift_per_unit_redness": 1.43190336227417
+ },
+ "confounded_s2": {
+  "cos_gravity_vs_colour_probe": 0.9991592168807983,
+  "steer_colour_angle_shift_hH": 0.005221199244260788,
+  "steer_random_angle_shift_hH": 0.024670684710144997,
+  "steer_colour_probe_g_shift_per_unit_redness": 7.999617099761963
+ },
+ "clean_s3": {
+  "cos_gravity_vs_colour_probe": -0.0021049834322184324,
+  "steer_colour_angle_shift_hH": 0.005303964950144291,
+  "steer_random_angle_shift_hH": 0.00965804886072874,
+  "steer_colour_probe_g_shift_per_unit_redness": -0.006666568107903004
+ },
+ "confounded_s3": {
+  "cos_gravity_vs_colour_probe": 0.9962385296821594,
+  "steer_colour_angle_shift_hH": 0.010220007039606571,
+  "steer_random_angle_shift_hH": 0.014401431195437908,
+  "steer_colour_probe_g_shift_per_unit_redness": 7.498812675476074
+ },
+ "clean_s4": {
+  "cos_gravity_vs_colour_probe": -0.14429357647895813,
+  "steer_colour_angle_shift_hH": 0.0028855870477855206,
+  "steer_random_angle_shift_hH": 0.004357990808784962,
+  "steer_colour_probe_g_shift_per_unit_redness": -0.6427262425422668
+ },
+ "confounded_s4": {
+  "cos_gravity_vs_colour_probe": 0.9957290887832642,
+  "steer_colour_angle_shift_hH": 0.004849649965763092,
+  "steer_random_angle_shift_hH": 0.007219394668936729,
+  "steer_colour_probe_g_shift_per_unit_redness": 7.650618553161621
+ }
+}

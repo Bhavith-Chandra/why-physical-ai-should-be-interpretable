@@ -1,0 +1,348 @@
+\documentclass[11pt]{article}
+% Single-column research-lab preprint layout. Swap in the venue style file for submission.
+\usepackage[letterpaper,margin=1in]{geometry}
+\usepackage{times}
+\usepackage[T1]{fontenc}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm,bm}
+\usepackage{graphicx,booktabs,xcolor,array}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
+\usepackage{enumitem}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,fit,backgrounds,calc}
+\setlist{itemsep=2pt,topsep=4pt,leftmargin=*}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+\theoremstyle{definition}\newtheorem{definition}{Definition}
+\theoremstyle{remark}\newtheorem{remark}{Remark}
+\input{numbers}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\thesis}[1]{\begin{center}\fbox{\parbox{0.92\linewidth}{\centering\itshape #1}}\end{center}}
+
+\title{\textbf{Why Physical AI Must Be Interpretable}}
+\author{Bhavith Chandra Challagundla\\[2pt]
+\normalsize Elemental Research Group \quad New York University\\
+\normalsize\texttt{bc4066@nyu.edu}}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+Machines that act in the physical world increasingly do so by consulting a learned world model: they imagine the consequences of candidate actions and choose the one whose imagined outcome is best. This paper argues that such systems cannot be made trustworthy by measuring their behavior alone, and that interpretability (evidence about which variables a world model represents and how those variables drive its predictions) is a technical requirement of physical AI, not an optional add-on. The argument has three parts. First, prediction accuracy on the training distribution does not identify the mechanism a world model has learned: a model that reads physics off a spurious cue can be exactly as accurate as one that has learned the physics, and only interventions on the model's variables separate them. Second, and specific to physical AI, a planner that optimizes actions against a world model acts as an adversary to that model: it preferentially selects the actions on which the model is most optimistically wrong, so held-out accuracy systematically overstates the reliability of the decisions actually taken. Third, physical failures are irreversible and concentrated in rare situations, which puts behavioral certification out of statistical reach and makes mechanistic evidence the only scalable form of assurance. We support the argument with controlled experiments on pixel-based world models. A model that learned a spurious color--gravity shortcut is \ratioValClCo$\times$ \emph{more} accurate on validation data than a model trained on causal data, and validation-based model selection chooses it in every one of \nSeeds{} seeds. Its error grows \ratioDecVal$\times$ once the spurious correlation is broken. Probes and interventions expose the shortcut using training data alone. We also report where simple interpretability tools fail, and we conclude with a program for building physical world models whose internal variables can be read, tested and trusted.
+\end{abstract}
+
+\section{Introduction}
+
+A robot reaching for a cup, a car merging onto a highway and a drone landing in wind face the same problem: they must choose an action now whose consequences unfold later in a world they only partially observe. The dominant approach in modern AI is to learn a \emph{world model}, a predictor of how the world will evolve, and to act by consulting it~\citep{sutton1991dyna,ha2018world,lecun2022path,hafner2023dreamerv3}. In the architecture proposed by LeCun~\citep{lecun2022path}, the world model is the central module of an autonomous agent: perception estimates the state of the world, the world model predicts future states under candidate action sequences, a cost module scores those futures, and an actor searches for the actions with the lowest predicted cost. Joint-embedding predictive architectures~\citep{assran2023ijepa,assran2025vjepa2}, generative world models~\citep{bruce2024genie,nvidia2025cosmos} and vision-language-action policies~\citep{brohan2023rt2,kim2024openvla,black2024pi0} are different routes toward the same structure.
+
+This architecture has a consequence that is easy to overlook. When an agent acts by consulting a world model, \emph{every decision it makes inherits the world model's beliefs about how the world works}. If the model believes that braking distance depends on the color of the road rather than its wetness, the agent will act on that belief, confidently and consistently, in exactly the situations where it is false. The question ``can we trust this agent?'' therefore reduces, to a large extent, to the question ``what does its world model believe, and why?''
+
+Today that question is answered almost entirely by measuring behavior: prediction loss on held-out data, success rates on benchmark tasks, and hours or miles without incident. We argue that this is not enough, and that it fails for reasons specific to physical AI rather than for generic reasons that apply to all machine learning. Our thesis is:
+
+\thesis{A physical AI system that acts by consulting a learned world model can be trusted only to the extent that we can verify which variables the model represents and how those variables cause its predictions. Behavioral evaluation cannot provide this verification. Interpretability can, and it must therefore be part of how physical AI is built and certified.}
+
+\paragraph{Three reasons.} The argument rests on three observations, each developed in Section~\ref{sec:argument}.
+\begin{enumerate}
+\item \textbf{Accuracy does not identify mechanism.} On the data a model was trained on, a model that has learned physics and a model that has learned a correlate of physics can make identical predictions (Proposition~\ref{prop:indist}). They come apart only off the training distribution, which is precisely where a deployed agent will eventually be. Only interventions on the variables the model uses can separate them (Proposition~\ref{prop:sep}).
+\item \textbf{Planning turns model error into an adversary.} An agent that selects the action with the best \emph{predicted} outcome systematically selects actions whose outcomes the model has over-estimated (Proposition~\ref{prop:optimism}). The planner searches for the model's mistakes, so the reliability of the decisions an agent takes is worse than the model's average accuracy suggests, and the gap grows with the strength of the search. This is the sense in which physical AI differs from passive prediction.
+\item \textbf{Physical failures are irreversible and rare.} Certifying a low failure rate from behavior alone requires an amount of testing that grows inversely with the target rate~\citep{kalra2016driving}. Verifying a mechanism, by contrast, covers every situation in which that mechanism is used.
+\end{enumerate}
+
+\paragraph{Contributions.} (i) We state the argument precisely, with three short propositions that isolate why behavioral evaluation fails for world-model-based agents. (ii) We propose a graded definition of interpretability evidence suited to physical AI, distinguishing what a variable \emph{encodes} from what it \emph{causes}. (iii) We give a controlled empirical demonstration in which validation loss actively prefers a world model that has learned the wrong physics, and interpretability detects it before deployment. We also report the limits of simple interpretability tools in the same setting. (iv) We outline a research program for interpretable physical world models. Code and the scripts that generate every number in this paper are released.
+
+\section{Physical AI Is World-Model-Centric}\label{sec:architecture}
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  box/.style={draw, rounded corners=2pt, minimum height=0.9cm, minimum width=2.1cm, align=center, font=\small, fill=white},
+  wm/.style={box, fill=blue!8, draw=blue!60!black, thick},
+  lens/.style={draw=red!70!black, thick, dashed, rounded corners=2pt, font=\scriptsize, text=red!70!black, align=center, fill=red!3},
+  ar/.style={-{Stealth[length=2.2mm]}, thick},
+  node distance=0.55cm and 0.9cm]
+\node[box] (world) {World\\[-1pt]\scriptsize state $s_t$};
+\node[box, right=of world] (perc) {Perception\\[-1pt]\scriptsize $z_t=\mathrm{Enc}(o_{\le t})$};
+\node[wm, right=of perc] (wm) {World model\\[-1pt]\scriptsize $\hat z_{t+k}=\mathrm{Pred}(z_t,a_{t:t+k})$};
+\node[box, right=of wm] (cost) {Cost\\[-1pt]\scriptsize $C(\hat z_{t+1:t+H})$};
+\node[box, below=1.1cm of wm] (actor) {Actor / planner\\[-1pt]\scriptsize $a^\star=\arg\min_a \hat C(a)$};
+\draw[ar] (world) -- node[above,font=\scriptsize]{$o_t$} (perc);
+\draw[ar] (perc) -- (wm);
+\draw[ar] (wm) -- (cost);
+\draw[ar] (cost) |- node[pos=0.25,right,font=\scriptsize]{$\hat C(a)$} (actor);
+\draw[ar] (actor) -- node[left,font=\scriptsize]{candidate $a$} (wm);
+\draw[ar] (actor) -| node[pos=0.25,below,font=\scriptsize]{executed $a^\star$} (world);
+\node[lens, above=0.45cm of wm, minimum width=6.2cm] (L) {Interpretability: read $z$, test what it encodes (L1),\\ intervene on it and measure what it causes (L2)};
+\draw[red!70!black, thick, dashed, -{Stealth[length=2mm]}] (L.south) -- (wm.north);
+\draw[red!70!black, thick, dashed, -{Stealth[length=2mm]}] (L.south west) -- (perc.north);
+\end{tikzpicture}
+\caption{A world-model-based agent, following~\citep{lecun2022path}. Every executed action is the outcome of a search against the world model's predictions, so the agent's behavior inherits the world model's beliefs, including its errors. Interpretability inspects the latent state $z$ shared by perception and prediction.}
+\label{fig:arch}
+\end{figure}
+
+Figure~\ref{fig:arch} shows the generic structure of a world-model-based agent. An encoder maps observations $o_{\le t}$ to a latent state $z_t$. A predictor maps $z_t$ and a candidate action sequence to predicted future latents. A cost function scores the predicted futures, and an actor searches over action sequences for the one with the lowest predicted cost~\citep{lecun2022path}. Model-predictive control with a learned model, latent imagination in Dreamer~\citep{hafner2023dreamerv3}, planning in the representation space of a joint-embedding model~\citep{assran2025vjepa2} and policy optimization inside a generative simulator~\citep{nvidia2025cosmos} are all instances of this pattern.
+
+Two properties of this structure drive the rest of the paper.
+
+\paragraph{The latent state is the agent's belief about the world.} Whatever the agent knows about mass, friction, contact, occlusion or the intentions of other agents, it knows through $z$. If a physically relevant variable is absent from $z$, the agent cannot act on it. If $z$ encodes it through a spurious correlate, the agent will act on the correlate.
+
+\paragraph{The actor is an optimizer.} The executed action is not a sample from the data distribution; it is the minimizer of a function computed by the world model. This makes the actions an agent takes, and the states it visits, systematically different from the ones on which the world model was evaluated. We show in Section~\ref{sec:planning} that the difference is not neutral: it is biased toward the model's errors.
+
+\section{The Argument}\label{sec:argument}
+
+\subsection{Accuracy does not identify mechanism}\label{sec:formal}
+
+Let the physical state be $s=(q,\lambda)$, where $q$ is the dynamic state (positions, velocities) and $\lambda$ collects physical parameters (masses, friction coefficients, gravity). Let $c$ be a \emph{nuisance} variable: something that affects appearance but not dynamics, such as color, texture, lighting or background. Observations are generated by an injective rendering function, $o=\rho(s,c)$, and the true dynamics map the current state to a future trajectory, $q_{t+1:t+H}=\Phi(q_t,\lambda)$.
+
+In any finite data-collection campaign, nuisances are correlated with physics: a fleet that drives mostly in one city sees wet roads mostly under one kind of sky; a robot trained in one lab sees heavy objects mostly in one color. The extreme case is a deterministic correlation.
+
+\begin{definition}[Causal and shortcut world models]
+Let $\psi$ be a function from nuisance values to physical parameters. The \emph{causal} world model predicts $f_{\mathrm{c}}(o)=\Phi(q,\lambda)$. The \emph{$\psi$-shortcut} world model predicts $f_{\mathrm{s}}(o)=\Phi(q,\psi(c))$; it infers the physics from the nuisance.
+\end{definition}
+
+\begin{proposition}[Behavioral indistinguishability]\label{prop:indist}
+Let $P$ be a data distribution under which $\lambda=\psi(c)$ almost surely. Then $f_{\mathrm{c}}=f_{\mathrm{s}}$ $P$-almost surely. Consequently, for every loss function and every test-set size, the empirical risks of $f_{\mathrm{c}}$ and $f_{\mathrm{s}}$ on i.i.d.\ samples from $P$ are equal with probability one.
+\end{proposition}
+\begin{proof}
+On the support of $P$, $\psi(c)=\lambda$, so $\Phi(q,\psi(c))=\Phi(q,\lambda)$ pointwise. The empirical risks are sums of identical terms.
+\end{proof}
+
+\begin{proposition}[Separation by intervention]\label{prop:sep}
+Let $\mathrm{do}(c\leftarrow c')$ change the nuisance while holding the physical state fixed, and define the intervention effect of a model $f$ as $\Delta(f)=\E\,\|f(\rho(s,c'))-f(\rho(s,c))\|$. Then $\Delta(f_{\mathrm{c}})=0$, whereas $\Delta(f_{\mathrm{s}})=\E\,\|\Phi(q,\psi(c'))-\Phi(q,\psi(c))\|$, which is strictly positive whenever $\Phi$ depends on $\lambda$ on a set of positive probability on which $\psi(c')\ne\psi(c)$.
+\end{proposition}
+\begin{proof}
+$f_{\mathrm{c}}$ does not depend on $c$. For $f_{\mathrm{s}}$, substitute the definition.
+\end{proof}
+
+Both statements are elementary, and their simplicity is the point. Proposition~\ref{prop:indist} says that no quantity of in-distribution testing can distinguish a world model that has learned physics from one that has learned a correlate of physics. This is a sharp instance of the underspecification documented across modern machine learning~\citep{damour2022underspecification} and of shortcut learning~\citep{geirhos2020shortcut}. Proposition~\ref{prop:sep} says what does distinguish them: changing a variable and observing whether the model's predictions change.
+
+One might object that the intervention in Proposition~\ref{prop:sep} is itself a behavioral test, since it only feeds the model modified inputs. It is, but designing it requires knowing \emph{which} variable to intervene on. In a real scene the candidate nuisances (lighting, texture, weather, sensor noise, co-occurring objects, background activity) are combinatorially many, and the training data gives no hint which ones matter (Proposition~\ref{prop:indist}). Reading the model's internal variables changes the search: one locates the representation of a physical parameter such as $\lambda$, asks what it is aligned with, and intervenes on that. Interpretability is what turns an intractable search over input perturbations into a targeted experiment. This is the core reason that black-box access is insufficient for rigorous audits~\citep{casper2024blackbox}.
+
+When the correlation is imperfect, $\lambda=\psi(c)+\varepsilon$, the two models are no longer exactly equivalent, but the difference in their risks is of the order of the noise $\varepsilon$, while the difficulty of extracting $\lambda$ from motion may be much larger than the difficulty of extracting $c$ from pixels. Gradient-based training then has every reason to \emph{prefer} the shortcut. Section~\ref{sec:exp} shows exactly this.
+
+\subsection{Planning turns model error into an adversary}\label{sec:planning}
+
+The previous argument applies to any learned predictor. The next one applies specifically to agents that act by optimizing against a world model, and it is the main reason that physical AI is harder to validate than passive prediction.
+
+Let $C(a)$ denote the true cost of executing an action (or action sequence) $a$ from a fixed state, and let $\hat C(a)=C(a)+e(a)$ be the cost predicted by the world model, where $e(a)$ is the model's error. The planner executes $\hat a=\arg\min_a \hat C(a)$.
+
+\begin{proposition}[Planning is optimistic]\label{prop:optimism}
+Suppose the model is unbiased at every action, $\E[e(a)]=0$ for all $a$ in a finite candidate set $\mathcal{A}$. Then
+\[
+\E\big[\hat C(\hat a)\big]\;\le\;\min_{a\in\mathcal{A}} C(a)\;\le\;\E\big[C(\hat a)\big].
+\]
+That is, the cost the agent \emph{expects} for the action it chooses is, on average, no larger than the best achievable cost, and the cost it \emph{incurs} is no smaller. If the true costs are all equal and the errors are i.i.d.\ with standard deviation $\sigma$, the expected optimism is $\E[C(\hat a)-\hat C(\hat a)]=\sigma\,\E[\max_{a}\xi_a]$, where $\xi_a=-e(a)/\sigma$. This is increasing in $|\mathcal{A}|$, and for Gaussian errors it grows as $\sigma\sqrt{2\log|\mathcal{A}|}$ asymptotically.
+\end{proposition}
+\begin{proof}
+Because the minimum of a collection of random variables is a concave function of them, Jensen's inequality gives $\E[\min_a \hat C(a)]\le\min_a \E[\hat C(a)]=\min_a C(a)$. The left-hand side equals $\E[\hat C(\hat a)]$ by definition of $\hat a$. For the right inequality, $C(\hat a)\ge\min_a C(a)$ holds pointwise. In the equal-cost case, $C(\hat a)-\hat C(\hat a)=-e(\hat a)=\max_a(-e(a))$, which has the stated expectation. Monotonicity holds because adding candidates can only increase a maximum, and the Gaussian rate is the standard asymptotic for the expected maximum of i.i.d.\ Gaussians.
+\end{proof}
+
+This is the optimizer's curse of decision analysis~\citep{smith2006optimizer}, a form of Goodhart's law~\citep{goodhart}, and it is well known in model-based reinforcement learning as model exploitation~\citep{janner2019mbpo}. Its implication for validation is what matters here. Held-out prediction error measures $e(a)$ on actions drawn from the data distribution. The agent, however, executes the actions on which $e$ is most negative, those where the model is most optimistically wrong. The more powerful the planner, the larger the set of actions it effectively compares, and the more strongly its choices concentrate on the model's errors. Improving the planner without improving the model makes the agent \emph{worse} in exactly the cases where the model is wrong.
+
+The proposition assumes the model is unbiased everywhere. A model that has learned a shortcut is not: it is \emph{systematically} wrong on every input where the nuisance and the physics disagree, and a planner that can choose which inputs it will encounter (by choosing where to drive, what to grasp, when to move) can steer into those inputs. Behavioral testing samples the data distribution; the planner samples the error distribution. The two diverge by construction.
+
+Interpretability addresses this at the right level. Rather than asking whether the model's predictions are accurate on average, one asks whether the variables on which the chosen action depends are the right variables. For example: is the predicted stopping distance a function of the friction variable, and is the friction variable a function of road wetness rather than road color? That is a question about mechanism, and its answer does not depend on which actions the planner happens to select.
+
+\subsection{Physical failures are irreversible and rare}
+
+A wrong answer from a chatbot can be retried. A wrong action from a robot arm or a vehicle often cannot. This changes the statistics of assurance. To show with confidence $1-\alpha$ that a per-trial failure probability is below $p$, using failure-free trials alone, requires $n\ge\ln(1/\alpha)/p$ trials, approximately $3/p$ at 95\% confidence. Kalra and Paddock carried this calculation out for automated driving and found that demonstrating human-level fatality rates would require hundreds of millions of miles of driving~\citep{kalra2016driving}. Koopman and Wagner explain why open-world long tails make arguments from test coverage fragile~\citep{koopman2016challenges}. Combined with Proposition~\ref{prop:optimism}, the situation is worse still: the rare situations that matter are the ones the planner is most likely to misjudge.
+
+The investigation of the 2018 Tempe collision illustrates where such failures live. The automated driving system detected the pedestrian seconds before impact, but repeatedly changed its classification of the object, and its predictions of the object's path did not persist across these changes~\citep{ntsb2019uber}. The failure was in the system's internal representation of the world, and it could have been found by inspecting that representation in situations that aggregate driving metrics rarely sample.
+
+Mechanistic evidence scales differently from behavioral evidence. A single verified statement such as ``the predicted trajectory of tracked objects depends on a persistent object identity variable, and that variable is stable under reclassification'' covers every situation in which the mechanism is used, including those that have never been observed.
+
+\subsection{Accountability requires reasons}
+
+Physical AI is entering domains governed by safety engineering and regulation. The EU AI Act imposes documentation, transparency and human-oversight obligations on high-risk systems, which include safety components of machinery and vehicles~\citep{euaiact2024}. Functional-safety practice~\citep{iso26262} and AI-specific guidance for vehicles and autonomous products~\citep{iso8800,ul4600} are organized around safety cases: structured arguments linking each identified hazard to the properties of the system that mitigate it. A statement such as ``the world model achieves low validation loss'' does not discharge a hazard such as ``the planner underestimates stopping distance on wet roads.'' A statement such as ``the world model's friction variable is decodable, is used by the dynamics, and responds correctly to interventions on road appearance'' does. Interpretable evidence is the form of evidence these arguments require. Rudin reaches a related conclusion for high-stakes decisions in general~\citep{rudin2019stop}.
+
+\section{What Interpretability Must Deliver}\label{sec:framework}
+
+``Interpretability'' covers methods of very different evidential strength~\citep{doshivelez2017rigorous}. For physical AI the relevant distinction is between what a representation \emph{encodes} and what it \emph{causes}. A linear probe~\citep{alain2016probes} can establish that a variable is recoverable from $z$; it cannot establish that the predictor uses it~\citep{belinkov2022probing,elazar2021amnesic}. Causal methods, which intervene on inputs or internal states and measure the effect on predictions~\citep{geiger2021causal,meng2022rome,wang2023ioi}, can. Table~\ref{tab:levels} orders the levels of evidence; a certification argument should state which level it relies on.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}L{0.7cm}L{3.4cm}L{4.3cm}L{4.6cm}@{}}
+\toprule
+Level & Evidence & What it establishes & How it fails \\ \midrule
+L0 & Behavior on held-out data & Average accuracy on the data distribution & Shortcuts (Prop.~\ref{prop:indist}); planner-induced shift (Prop.~\ref{prop:optimism}) \\
+L1 & Representational: probes, feature discovery & A variable is \emph{decodable} from the latent state & Decodable but not used by the dynamics \\
+L2 & Causal: interventions on inputs or latents & A variable is \emph{used} as hypothesized & Wrong hypothesis class; linear interventions miss nonlinear features \\
+L3 & Mechanistic: circuits and features & \emph{How} the variable is computed and used & Incomplete decomposition \\
+\bottomrule
+\end{tabular}
+\caption{Levels of evidence about a physical world model. Each level is strictly more informative than the one above it.}\label{tab:levels}
+\end{table}
+
+Three desiderata follow from the argument of Section~\ref{sec:argument}. Interpretability evidence for physical AI should be \textbf{grounded}: stated in terms of physical variables (pose, velocity, mass, friction, contact, identity) that have a meaning independent of the model. It should be \textbf{causal}: it should establish that predictions depend on those variables, not merely that the variables can be decoded (L2 or above). And it should be \textbf{decision-relevant}: it should concern the variables on which the planner's chosen actions depend, since those are the ones Proposition~\ref{prop:optimism} says will be stress-tested. Physical AI has one advantage over language here: the ground-truth variables are defined by physics and can be measured exactly in simulation, so grounded evaluation is available in a way it rarely is for language models.
+
+\section{An Empirical Illustration}\label{sec:exp}
+
+We now instantiate Propositions~\ref{prop:indist} and~\ref{prop:sep} in a controlled setting small enough to measure everything. The aim is not to measure how often shortcuts occur in deployed systems, but to show the mechanism concretely: a realistic training procedure produces a shortcut world model, standard validation prefers it, and interpretability detects it without access to deployment data.
+
+\subsection{Setup}
+
+\paragraph{Environment.} A damped pendulum, $\ddot\theta=-g\sin\theta-b\dot\theta$, with gravity $g\sim\mathcal U[6,14]$ and damping $b\sim\mathcal U[0.05,0.3]$ drawn per episode, rendered as $32\times32$ RGB images of a bob and a fixed pivot ($\Delta t=0.08$\,s). The bob's color, parameterized by its redness $r\in[0,1]$, is a nuisance: it has no effect on the dynamics.
+
+\paragraph{Two training conditions.} With \emph{causal data}, $r$ is drawn independently of the physics. With \emph{confounded data}, $r=(g-6)/8+\mathcal N(0,0.03^2)$, so color nearly determines gravity. This is a stylized version of confounds that arise naturally in data collection.
+
+\paragraph{World model.} A convolutional encoder maps three stacked frames, enough to observe acceleration, to a 32-dimensional latent $z_t$. A residual MLP predicts the latent $H=8$ steps (0.64\,s) ahead, and a deconvolutional decoder renders each predicted frame. Models are trained on a foreground-weighted pixel loss over the full rollout, \nEpochs{} epochs, on \nTrainWin{} windows, with \nSeeds{} seeds per condition and disjoint data streams. Predicted angles are read from decoded frames by a thresholded intensity centroid; on ground-truth frames its error is \readErrMeanMean{} mrad on average (maximum \readErrMaxMean{} mrad). Full details are in Appendix~\ref{app:details}.
+
+\paragraph{Evaluation sets} (300 episodes each): \emph{matched} (the training distribution), \emph{decorrelated} (color independent of gravity), \emph{OOD gravity} ($g\in[16,22]$) and \emph{OOD damping} ($b\in[0.6,1.0]$). All results are mean\,$\pm$\,standard deviation over seeds.
+
+\subsection{Validation loss prefers the wrong physics}
+
+\begin{figure}[t]
+\centering\includegraphics[width=\textwidth]{fig_main.pdf}
+\caption{\textbf{(a)} Angle error at the prediction horizon. The model trained on confounded data is \emph{more} accurate on the training distribution and degrades sharply when color is decorrelated from gravity. \textbf{(b)} Effect of the intervention do(color $\leftarrow$ flipped), with physics held fixed, on the predicted trajectory. \textbf{(c)} Linear-probe $R^2$ for gravity, on matched (solid) and decorrelated (hatched) data. Error bars: s.d.\ over \nSeeds{} seeds.}
+\label{fig:main}
+\end{figure}
+
+\begin{table}[t]\centering\small
+\begin{tabular}{@{}lcc@{}}\toprule
+Angle error at $t{+}H$ (rad) & Causal data & Confounded data \\ \midrule
+Matched (validation) & \errClVal & \errCoVal \\
+Color decorrelated & \errClDec & \errCoDec \\
+OOD gravity & \errClOodG & \errCoOodG \\
+OOD damping & \errClOodD & \errCoOodD \\ \bottomrule
+\end{tabular}
+\caption{Behavioral (L0) evaluation, mean\,$\pm$\,s.d.\ over \nSeeds{} seeds.}\label{tab:beh}
+\end{table}
+
+Table~\ref{tab:beh} and Figure~\ref{fig:main}a report behavioral evaluation. On the training distribution, the model trained on confounded data is \ratioValClCo$\times$ more accurate than the model trained on causal data (\errCoValMean{} versus \errClValMean{} rad). The ordering holds in \valPicksShortcut{} of \nSeeds{} seeds, so standard model selection would choose the shortcut model every time. The explanation is the one anticipated in Section~\ref{sec:formal}: inferring gravity from three frames of motion is hard, while reading it off color is easy, so the training objective rewards the shortcut. When color and gravity are decorrelated, the shortcut model's error rises \ratioDecVal$\times$, to \errCoDecMean{} rad, while the causal model is unaffected (\errClDecMean{} rad). In the language of Section~\ref{sec:argument}, behavioral evaluation on the available data does not merely fail to detect the problem; it ranks the models in the wrong order.
+
+Neither model extrapolates to gravity outside the training range (both above 0.4 rad). That is a different and expected failure, and we return to it in Section~\ref{sec:monitor}.
+
+\subsection{Interpretability detects the shortcut before deployment}
+
+\begin{table}[t]\centering\small
+\begin{tabular}{@{}llcc@{}}\toprule
+Level & Measurement & Causal data & Confounded data \\ \midrule
+L1 & Probe $R^2$, gravity (matched) & \rtwoClgravityVal & \rtwoCogravityVal \\
+L1 & Probe $R^2$, gravity (decorrelated) & \rtwoClgravityDec & \rtwoCogravityDec \\
+L1 & Probe $R^2$, angular velocity (matched) & \rtwoClomegaVal & \rtwoCoomegaVal \\
+L1 & Probe $R^2$, redness (matched) & \rtwoClrednessVal & \rtwoCorednessVal \\
+L1 & Cosine (gravity probe, color probe) & \cosGRCl & \cosGRCo \\
+L2 & do(color): shift of predicted bob at $t{+}H$ (rad) & \intShiftCl & \intShiftCo \\
+L2 & do(color): implied gravity shift per unit redness & \intGimpCl & \intGimpCo \\
+L2 & Latent steering along color direction (rad) & \steerCCl & \steerCCo \\
+L2 & Latent steering along random direction (rad) & \steerRCl & \steerRCo \\ \bottomrule
+\end{tabular}
+\caption{Interpretability evidence (L1, L2), computed from training-distribution data and synthetic interventions only. Mean\,$\pm$\,s.d.\ over \nSeeds{} seeds.}\label{tab:interp}
+\end{table}
+
+Table~\ref{tab:interp} collects evidence that a developer could obtain \emph{before deployment}, using only training-distribution data.
+
+\paragraph{What the latent state encodes (L1).} Both models represent the pendulum's dynamic state well (angular-velocity probe $R^2$ of \rtwoClomegaValMean{} and \rtwoCoomegaValMean). They differ in how they represent gravity. In the shortcut model, gravity is linearly decodable on the training distribution ($R^2=\rtwoCogravityValMean$), but the gravity probe is almost parallel to the color probe (cosine \cosGRCoMean) and collapses when color is decorrelated ($R^2=\rtwoCogravityDecMean$). Read directly from the training data, this says: \emph{the model's gravity variable is a color variable}. In the causal model, gravity is not linearly decodable at all ($R^2=\rtwoClgravityValMean$; the cosine for this model is therefore not meaningful). Nonlinear probes agree (MLP $R^2=\idMlpMean$, $k$NN $R^2=\idKnnMean$; Section~\ref{sec:triangulation}). The reason is the sensor rather than the model: from three exact simulator angles, a finite-difference estimator recovers gravity almost perfectly ($R^2=\idExactMean$), but from angles read off $32\times32$ pixels it fails ($R^2=\idPixelMean$), because double differencing amplifies milliradian readout error by a factor of order $1/\Delta t^2$. Gravity is therefore barely identifiable from the causal model's input, and color is the only cheap route to it. This is precisely the condition under which, as Section~\ref{sec:formal} anticipates, training prefers the shortcut. It also limits what can be monitored (Section~\ref{sec:monitor}).
+
+\paragraph{What the latent state causes (L2).} Swapping the red and blue channels of the input, which maps $r$ to $1-r$ and leaves the physics unchanged, moves the shortcut model's predicted bob by \intShiftCoMean{} rad at the horizon, \ratioIntCoCl$\times$ the shift for the causal model (\intShiftClMean{} rad; Figure~\ref{fig:main}b). To express the effect in physical units, we fit $\ddot\theta=-g\sin\theta-b\dot\theta$ to each model's own predicted trajectories, which recovers the gravity the model \emph{behaves as if it believes}. Under the color intervention, the shortcut model's implied gravity changes by \intGimpCoMean{} per unit of redness, close to the full width (8) of the training range of gravity, compared with \intGimpClMean{} for the causal model. This is Proposition~\ref{prop:sep}, observed in a trained network.
+
+\paragraph{Decodable is not the same as used.} We also intervened directly on the latent state, moving $z$ along the probed color direction by an amount that changes probed redness by $\pm0.5$. If the shortcut ran through this direction, predicted motion should change substantially. It does not: the shift (\steerCCoMean{} rad) is no larger than that produced by a random direction of the same norm (\steerRCoMean{} rad). The dynamics module reads color through a feature that the linear probe does not isolate. A certification argument resting on probes would therefore be unsound, as amnesic probing showed in language models~\citep{elazar2021amnesic}. This is why Table~\ref{tab:levels} separates L1 from L2, and why the evidence required for physical AI must be causal.
+
+\subsection{Triangulation and reproducibility}\label{sec:triangulation}
+
+A result that depends on a single measurement choice is fragile, so we re-derived each headline claim with an independent method (Table~\ref{tab:tri}).
+
+\textbf{Readout.} Replacing the centroid readout with an argmax-pixel readout preserves the error ordering (confounded on validation $<$ causal $<$ confounded on decorrelated data).
+
+\textbf{Physics oracles.} The simulator offers reference points that no training choice can influence. On decorrelated data, the causal model's error (\oraModelClMean{} rad) is close to that of an oracle that knows the exact dynamic state but assumes mean gravity (\oraMeanGMean{} rad). The confounded model's error (\oraModelCoMean{} rad) is close to that of an oracle that reads gravity off color as $g=6+8r$ (\oraColGMean{} rad). Each model behaves like the physics hypothesis that its internals suggest it holds.
+
+\textbf{Dose-response.} Shifting redness by $+0.05$, $+0.1$, $+0.2$ and $+0.3$ shifts the confounded model's prediction monotonically (\doseACoMean, \doseBCoMean, \doseCCoMean, \doseDCoMean{} rad), against \doseDClMean{} rad for the causal model at the largest dose.
+
+\textbf{Uncertainty.} Episode-level bootstrap 95\% confidence intervals separate both the validation gap and the decorrelation gap in every seed.
+
+Every empirical sentence in this paper corresponds to an executable check that must hold in \emph{every} seed. All paper numbers are generated from stored results, and a from-scratch retraining of one run reproduces its stored metrics exactly. During validation, this suite found and corrected an unseeded weight initialization and an overstated claim about readout accuracy; both are documented in the released repository.
+
+\begin{table}[t]\centering\small
+\begin{tabular}{@{}llc@{}}\toprule
+Check & Measurement & Value \\ \midrule
+Independent readout (argmax) & causal / confounded, validation & \triArgClValMean{} / \triArgCoValMean{} \\
+ & confounded, decorrelated & \triArgCoDecMean \\
+Physics oracle (decorrelated) & true $g$ / mean $g$ / $g$ from color & \oraTrueGMean{} / \oraMeanGMean{} / \oraColGMean \\
+ & causal model / confounded model & \oraModelClMean{} / \oraModelCoMean \\
+Gravity identifiability & exact angles / pixel readout ($R^2$) & \idExactMean{} / \idPixelMean \\
+ & MLP / $k$NN probe on causal latent ($R^2$) & \idMlpMean{} / \idKnnMean \\ \bottomrule
+\end{tabular}
+\caption{Triangulation. Each headline claim re-derived independently; angle errors in rad at $t{+}H$, means over \nSeeds{} seeds.}\label{tab:tri}
+\end{table}
+
+\subsection{One can monitor only what the model represents}\label{sec:monitor}
+
+\begin{figure}[t]
+\centering\includegraphics[width=0.55\textwidth]{fig_monitor.pdf}
+\caption{Runtime-monitor AUROC for separating shifted inputs from training-distribution inputs. All scores except the lagged residual ($\dagger$), which requires the next observation, are available before the agent acts. Dashed line: chance.}\label{fig:mon}
+\end{figure}
+
+A natural use of interpretability at deployment time is runtime monitoring: flagging, before the agent acts, inputs on which the world model is likely to be wrong. We evaluated four scores available before acting: nearest-neighbor distance in pixel space, Mahalanobis distance in latent space~\citep{lee2018mahalanobis}, a range check on the probed gravity estimate, and a kinematic-consistency score that compares the acceleration the model imagines, decoded by probes from $z_t,z_{t+1},z_{t+2}$, with the acceleration visible in its input. We compare them with a lagged baseline, the one-step prediction residual, which needs the next observation and therefore arrives too late to prevent an action.
+
+The results (Figure~\ref{fig:mon}; Table~\ref{tab:mon} in the appendix) are negative. For the causal model under out-of-range gravity, every pre-action score is close to chance (kNN \aucClGKnnMean, Mahalanobis \aucClGMahaMean, gravity probe \aucClGPrangeMean, kinematic consistency \aucClGKinMean), and only the lagged residual is clearly better (\aucClGLagMean). The gravity-probe monitor fails for a reason the previous section already exposed: this model has no gravity variable to read.
+
+We regard this result as supporting the thesis rather than weakening it. A monitor that reads a world model's internal variables is only as good as the model's representation of the variables that matter. The lesson is that physical world models should be \emph{built} so that safety-relevant physical parameters are explicitly represented, and \emph{verified} (at L1 and L2) to represent them, before monitors are built on top of them. Without interpretability, one would not know which of these situations one is in.
+
+\section{Objections}\label{sec:objections}
+
+\paragraph{``More diverse data will fix this.''} Diversity along the right axes does reduce shortcut learning, and invariance-seeking objectives can help~\citep{arjovsky2019irm,scholkopf2021causal}. But Proposition~\ref{prop:indist} says that the training data cannot reveal which axes are the right ones, and Proposition~\ref{prop:optimism} says that the planner will find whichever axes were missed. Interpretability tells us where to diversify.
+
+\paragraph{``Interpretability does not scale.''} Dictionary learning has been applied to production-scale language models~\citep{templeton2024scaling}, and circuit-level analyses have recovered nontrivial algorithms~\citep{olah2020zoom,wang2023ioi}. Interpretability has also revealed emergent world representations in sequence models~\citep{li2023othello,nanda2023emergent,gurnee2023space}, and shown that accurate generative models can hold incoherent world models~\citep{vafa2024evaluating}. Physical world models are, if anything, easier targets: their ground-truth variables are defined by physics and measurable in simulation.
+
+\paragraph{``Explanations can be unfaithful.''} They can. Saliency maps can be insensitive to the model they explain~\citep{adebayo2018sanity}, and probes can decode variables the model never uses~\citep{belinkov2022probing,elazar2021amnesic}; our latent-steering result reproduces the latter. The conclusion is not to abandon interpretability but to demand causal evidence (L2 and above) for any claim that enters a safety argument.
+
+\paragraph{``Build physics in, and interpretability is unnecessary.''} Physically structured models, such as Hamiltonian networks~\citep{greydanus2019hamiltonian}, make some variables explicit by construction, and we endorse them where they apply. But open-world physical AI must also model contact, deformable objects, other agents and perception itself, and these will remain learned. Building structure in and verifying what was learned are complementary.
+
+\section{A Research Program}\label{sec:agenda}
+
+\begin{enumerate}
+\item \textbf{Physical-variable audits.} For each safety-relevant variable (pose, velocity, mass, friction, contact, object identity and permanence, the intent of other agents), report whether it is decodable (L1) and whether it is causally used (L2), on simulation suites where the ground truth is known. These audits should accompany world-model releases the way benchmark numbers do today.
+\item \textbf{Interpretability-guided stress testing.} Use feature discovery on world-model latents~\citep{bricken2023monosemanticity,templeton2024scaling} to propose the nuisance variables a model might be relying on, then test each with targeted interventions (Proposition~\ref{prop:sep}). This is how interpretability makes the search for shortcuts tractable.
+\item \textbf{Decision-focused interpretability.} Proposition~\ref{prop:optimism} says the states that matter are those the planner selects. Interpretability should be evaluated on planner-chosen actions and states, not only on the data distribution.
+\item \textbf{Causal methods for latent dynamics.} Linear interventions missed the feature the shortcut model used. Interchange interventions and causal abstraction~\citep{geiger2021causal} must be extended to recurrent latent predictors.
+\item \textbf{Representation-aware training.} If monitoring requires explicit variables, training objectives should encourage identifiable physical latents~\citep{bengio2013representation,scholkopf2021causal}, with the caveat that unsupervised disentanglement requires inductive bias to be identifiable~\citep{locatello2019challenging}.
+\item \textbf{Interpretability-based safety cases.} Templates that map hazards to L1--L3 evidence, compatible with existing functional-safety and AI-safety standards~\citep{iso26262,iso8800,ul4600}.
+\end{enumerate}
+
+\section{Limitations}
+
+Our experiments use one low-dimensional system, one designed confound, a small convolutional world model and \nSeeds{} seeds per condition. They demonstrate a mechanism; they do not measure how prevalent such shortcuts are in deployed physical AI, and validating the argument on large world models and real confounds is the most important next step. Our confound is nearly deterministic, and weaker confounds will produce weaker preferences for the shortcut. Our runtime monitors were simple, and stronger methods such as ensembles~\citep{lakshminarayanan2017ensembles} may perform better than the near-chance results we report. We did not experimentally test Proposition~\ref{prop:optimism} with a planner in the loop. Finally, regulatory requirements vary by jurisdiction and continue to change, and this paper does not offer legal interpretation.
+
+\section{Conclusion}
+
+An agent that acts by consulting a world model is only as trustworthy as that model's beliefs about how the world works. Those beliefs cannot be read off its accuracy. A world model can be more accurate on everything that was tested and still wrong about the world, because it learned the wrong variable; a planner that optimizes against it will find the situations where it is wrong; and in the physical world those situations are rare, consequential and irreversible. Verifying a world model's beliefs requires looking at the variables it represents and testing what they cause. That is why physical AI must be interpretable, and why the interpretability it needs must be causal.
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\appendix
+\section{Additional Results}
+
+\begin{table}[h]\centering\small
+\begin{tabular}{@{}lccc@{}}\toprule
+Monitor (AUROC) & Causal / OOD gravity & Causal / OOD damping & Confounded / decorrelated \\ \midrule
+Pixel kNN distance & \aucClGKnn & \aucClDKnn & \aucCoDecKnn \\
+Latent Mahalanobis distance & \aucClGMaha & \aucClDMaha & \aucCoDecMaha \\
+Probe: gravity range & \aucClGPrange & \aucClDPrange & \aucCoDecPrange \\
+Probe: kinematic consistency & \aucClGKin & \aucClDKin & \aucCoDecKin \\
+Lagged one-step residual$^\dagger$ & \aucClGLag & \aucClDLag & \aucCoDecLag \\ \bottomrule
+\end{tabular}
+\caption{Runtime-monitor AUROC (shifted versus matched inputs), mean\,$\pm$\,s.d.\ over \nSeeds{} seeds. $\dagger$: requires the next observation.}\label{tab:mon}
+\end{table}
+
+\begin{table}[h]\centering\small
+\begin{tabular}{@{}lcc@{}}\toprule
+Pixel MSE ($\times10^{-3}$) & Causal data & Confounded data \\ \midrule
+Matched & \mseClVal & \mseCoVal \\
+Decorrelated & \mseClDec & \mseCoDec \\
+OOD gravity & \mseClOodG & \mseCoOodG \\ \bottomrule
+\end{tabular}
+\caption{Pixel-space prediction error.}
+\end{table}
+
+\section{Implementation Details}\label{app:details}
+
+\paragraph{Simulation and rendering.} Semi-implicit Euler integration with 10 substeps per frame. Initial angle $\theta_0\sim\mathcal U[-1.4,1.4]$, initial angular velocity $\dot\theta_0\sim\mathcal U[-2,2]$. The bob is a Gaussian blob (standard deviation 1.6 px) at radius 11 px from the pivot, multiplied by the RGB color $(0.3+0.7r,\ 0.3,\ 0.3+0.7(1-r))$. Episodes are cut into windows of 3 input and 8 target frames with stride 3.
+
+\paragraph{Architecture and training.} Encoder: three stride-2 $4\times4$ convolutions (32, 64, 64 channels; GELU), followed by an MLP to $z\in\mathbb R^{32}$. Predictor: residual MLP $z\leftarrow z+\mathrm{MLP}(z)$ with two hidden layers of width 256. Decoder: MLP followed by three transposed convolutions with linear output. The loss weight $1+30\cdot\max_c y$ up-weights bob pixels; without it, training collapses to predicting an empty frame, which we observed in pilot runs. AdamW (learning rate $10^{-3}$ with a one-cycle schedule, weight decay $10^{-4}$), batch size 128, gradient clipping at norm 1. Each model trains in about four minutes on two CPU cores.
+
+\paragraph{Analyses.} Probes are ridge regressions with cross-validated regularization ($\alpha\in[10^{-3},10^{3}]$), fit on the training windows and evaluated on held-out sets. Implied gravity is obtained by least-squares fitting of $\ddot\theta=-g\sin\theta-b\dot\theta$ to finite differences of each model's predicted angles. Latent steering adds $\delta\,w/\|w\|^2$ to $z_t$, where $w$ is the redness-probe weight vector and $\delta=\pm0.5$, and rolls out the predictor from the modified latent. The random-direction control uses a Gaussian direction rescaled to the same norm.
+\end{document}

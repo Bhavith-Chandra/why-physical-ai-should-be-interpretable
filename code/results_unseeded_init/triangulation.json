@@ -1,0 +1,322 @@
+{
+ "s0": {
+  "T1_readout": {
+   "argmax_err_hH": {
+    "clean_val": 0.13240552736723596,
+    "conf_val": 0.03227987896594928,
+    "conf_decorr": 0.17442200662115556,
+    "clean_decorr": 0.13488627401025816
+   },
+   "ordering_holds": true
+  },
+  "T2_oracles_err_hH": {
+   "true_g": 0.0,
+   "knows_state_g_fixed_at_mean_10": 0.11339400959204901,
+   "g_read_from_colour_6+8r": 0.1514468875686982,
+   "model_clean": 0.126667498504998,
+   "model_confounded": 0.171230468111924
+  },
+  "T3_gravity_identifiability": {
+   "exact_angles_r2_(perfect_sensor)": 0.9996254159210584,
+   "centroid_readout_err_mean_rad": 0.0017649870823302468,
+   "centroid_readout_err_max_rad": 0.005137925344271044,
+   "knn_probe_r2": -0.0014214265510648083,
+   "mlp_probe_r2": 0.022205249473655764,
+   "physics_from_3_frames_r2_(|sin|>0.15)": -0.0496952197665832,
+   "physics_from_3_frames_frac_usable": 0.83
+  },
+  "T4_dose_response": {
+   "deltas": [
+    0.05,
+    0.1,
+    0.2,
+    0.3
+   ],
+   "clean": [
+    0.0029134713113307953,
+    0.005894605070352554,
+    0.012187528423964977,
+    0.017943888902664185
+   ],
+   "conf": [
+    0.025339853018522263,
+    0.04982574284076691,
+    0.09624885022640228,
+    0.13623546063899994
+   ],
+   "conf_monotone": true
+  },
+  "T5_bootstrap95": {
+   "clean_val": [
+    0.11866155212587677,
+    0.13153186788413165
+   ],
+   "conf_val": [
+    0.021813812107655577,
+    0.023954058919595362
+   ],
+   "conf_decorr": [
+    0.16215873382357576,
+    0.18023692434829947
+   ],
+   "val_gap_excludes_0": true,
+   "decorr_gap_excludes_0": true
+  }
+ },
+ "s1": {
+  "T1_readout": {
+   "argmax_err_hH": {
+    "clean_val": 0.13272089867774578,
+    "conf_val": 0.0336719939869461,
+    "conf_decorr": 0.18221494256239035,
+    "clean_decorr": 0.13763528455779087
+   },
+   "ordering_holds": true
+  },
+  "T2_oracles_err_hH": {
+   "true_g": 0.0,
+   "knows_state_g_fixed_at_mean_10": 0.11736506592191695,
+   "g_read_from_colour_6+8r": 0.15908307199863364,
+   "model_clean": 0.1335653825880153,
+   "model_confounded": 0.17924040097909855
+  },
+  "T3_gravity_identifiability": {
+   "exact_angles_r2_(perfect_sensor)": 0.9995604817119051,
+   "centroid_readout_err_mean_rad": 0.0018270053128435781,
+   "centroid_readout_err_max_rad": 0.005131083984096786,
+   "knn_probe_r2": -0.04616260993057075,
+   "mlp_probe_r2": 0.005481684270886911,
+   "physics_from_3_frames_r2_(|sin|>0.15)": -0.21193950004473705,
+   "physics_from_3_frames_frac_usable": 0.8133333333333334
+  },
+  "T4_dose_response": {
+   "deltas": [
+    0.05,
+    0.1,
+    0.2,
+    0.3
+   ],
+   "clean": [
+    0.002582038287073374,
+    0.005264931824058294,
+    0.010925871320068836,
+    0.016356803476810455
+   ],
+   "conf": [
+    0.025218287482857704,
+    0.04962826520204544,
+    0.09548700600862503,
+    0.13458910584449768
+   ],
+   "conf_monotone": true
+  },
+  "T5_bootstrap95": {
+   "clean_val": [
+    0.12123948733942304,
+    0.13389000924532157
+   ],
+   "conf_val": [
+    0.022600977348790123,
+    0.024720254834290478
+   ],
+   "conf_decorr": [
+    0.16870660689501393,
+    0.19043327692802084
+   ],
+   "val_gap_excludes_0": true,
+   "decorr_gap_excludes_0": true
+  }
+ },
+ "s2": {
+  "T1_readout": {
+   "argmax_err_hH": {
+    "clean_val": 0.12946915815957702,
+    "conf_val": 0.03589181464496511,
+    "conf_decorr": 0.16643508073883953,
+    "clean_decorr": 0.13390296926995224
+   },
+   "ordering_holds": true
+  },
+  "T2_oracles_err_hH": {
+   "true_g": 0.0,
+   "knows_state_g_fixed_at_mean_10": 0.11749989603005308,
+   "g_read_from_colour_6+8r": 0.14712463916925836,
+   "model_clean": 0.13025166297850718,
+   "model_confounded": 0.16477639720825188
+  },
+  "T3_gravity_identifiability": {
+   "exact_angles_r2_(perfect_sensor)": 0.9995831451709994,
+   "centroid_readout_err_mean_rad": 0.0017228478203235808,
+   "centroid_readout_err_max_rad": 0.005196750214341239,
+   "knn_probe_r2": -0.04345349389228015,
+   "mlp_probe_r2": 0.0037689482156367804,
+   "physics_from_3_frames_r2_(|sin|>0.15)": -0.08860373484817807,
+   "physics_from_3_frames_frac_usable": 0.8206666666666667
+  },
+  "T4_dose_response": {
+   "deltas": [
+    0.05,
+    0.1,
+    0.2,
+    0.3
+   ],
+   "clean": [
+    0.0022169107105582952,
+    0.004493786953389645,
+    0.009264412336051464,
+    0.013647802174091339
+   ],
+   "conf": [
+    0.025034090504050255,
+    0.04955586791038513,
+    0.09676690399646759,
+    0.13773958384990692
+   ],
+   "conf_monotone": true
+  },
+  "T5_bootstrap95": {
+   "clean_val": [
+    0.11979082725280814,
+    0.13164355473375502
+   ],
+   "conf_val": [
+    0.025649423868577274,
+    0.02817364021453818
+   ],
+   "conf_decorr": [
+    0.1554840254114227,
+    0.17459320681477916
+   ],
+   "val_gap_excludes_0": true,
+   "decorr_gap_excludes_0": true
+  }
+ },
+ "s3": {
+  "T1_readout": {
+   "argmax_err_hH": {
+    "clean_val": 0.1367342692745435,
+    "conf_val": 0.032813286686273285,
+    "conf_decorr": 0.1678199851391112,
+    "clean_decorr": 0.12892197460799612
+   },
+   "ordering_holds": true
+  },
+  "T2_oracles_err_hH": {
+   "true_g": 0.0,
+   "knows_state_g_fixed_at_mean_10": 0.11132655492500747,
+   "g_read_from_colour_6+8r": 0.14777487819417062,
+   "model_clean": 0.12513394792519497,
+   "model_confounded": 0.16544401625270275
+  },
+  "T3_gravity_identifiability": {
+   "exact_angles_r2_(perfect_sensor)": 0.9996108564900894,
+   "centroid_readout_err_mean_rad": 0.0016886521690145403,
+   "centroid_readout_err_max_rad": 0.005183251616257822,
+   "knn_probe_r2": -0.03763550477462574,
+   "mlp_probe_r2": -0.03440745483256635,
+   "physics_from_3_frames_r2_(|sin|>0.15)": -0.07187853480275708,
+   "physics_from_3_frames_frac_usable": 0.8313333333333334
+  },
+  "T4_dose_response": {
+   "deltas": [
+    0.05,
+    0.1,
+    0.2,
+    0.3
+   ],
+   "clean": [
+    0.002603099914267659,
+    0.005239865742623806,
+    0.010611025616526604,
+    0.01568576879799366
+   ],
+   "conf": [
+    0.024594945833086967,
+    0.04880797490477562,
+    0.09506506472826004,
+    0.13586680591106415
+   ],
+   "conf_monotone": true
+  },
+  "T5_bootstrap95": {
+   "clean_val": [
+    0.12655249448781686,
+    0.13928837423420262
+   ],
+   "conf_val": [
+    0.022163933504507804,
+    0.024223177010133014
+   ],
+   "conf_decorr": [
+    0.15653990992185224,
+    0.17463742817189404
+   ],
+   "val_gap_excludes_0": true,
+   "decorr_gap_excludes_0": true
+  }
+ },
+ "s4": {
+  "T1_readout": {
+   "argmax_err_hH": {
+    "clean_val": 0.1343155735197045,
+    "conf_val": 0.03325883592732654,
+    "conf_decorr": 0.1640029159470097,
+    "clean_decorr": 0.1300077253954659
+   },
+   "ordering_holds": true
+  },
+  "T2_oracles_err_hH": {
+   "true_g": 0.0,
+   "knows_state_g_fixed_at_mean_10": 0.10875984276491302,
+   "g_read_from_colour_6+8r": 0.14884905859951236,
+   "model_clean": 0.12296179607432967,
+   "model_confounded": 0.16291984078483887
+  },
+  "T3_gravity_identifiability": {
+   "exact_angles_r2_(perfect_sensor)": 0.9996187652934503,
+   "centroid_readout_err_mean_rad": 0.0017258813596059764,
+   "centroid_readout_err_max_rad": 0.005163905253655843,
+   "knn_probe_r2": -0.01864907692543949,
+   "mlp_probe_r2": 0.016163551665765108,
+   "physics_from_3_frames_r2_(|sin|>0.15)": -0.04324505101266585,
+   "physics_from_3_frames_frac_usable": 0.8346666666666667
+  },
+  "T4_dose_response": {
+   "deltas": [
+    0.05,
+    0.1,
+    0.2,
+    0.3
+   ],
+   "clean": [
+    0.0019868940580636263,
+    0.003987411968410015,
+    0.008047551847994328,
+    0.011814447119832039
+   ],
+   "conf": [
+    0.024787945672869682,
+    0.04900620877742767,
+    0.0961323007941246,
+    0.13773973286151886
+   ],
+   "conf_monotone": true
+  },
+  "T5_bootstrap95": {
+   "clean_val": [
+    0.12152879245728013,
+    0.1333561171878667
+   ],
+   "conf_val": [
+    0.021819923764473784,
+    0.023790403343589117
+   ],
+   "conf_decorr": [
+    0.1539792469235051,
+    0.17182010197100728
+   ],
+   "val_gap_excludes_0": true,
+   "decorr_gap_excludes_0": true
+  }
+ }
+}

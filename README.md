@@ -12,6 +12,13 @@ It then demonstrates the argument on pixel-based world models.
 
 **Main empirical result.** Two pendulum world models are trained, one on data where bob color is confounded with gravity and one on causal data. The confounded model is *more accurate* on validation data, so validation-based model selection picks it in every seed. It fails once the confound breaks. Probes and interventions expose it using training data only. Exact numbers, per seed, are in [`VALIDATION.md`](VALIDATION.md) and in the PDF.
 
+**Status: 18/18 claims pass in every one of 5 seeds**, including:
+- a bit-identical from-scratch rerun (determinism);
+- independent re-derivation of each headline claim (triangulation);
+- regeneration of every paper number from stored results.
+
+An earlier full run with unseeded weight initialization (`code/results_unseeded_init/`) reproduces the same headline ratios, which gives 10 independent replications in total.
+
 ## Repository layout
 
 ```

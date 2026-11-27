@@ -1,0 +1,95 @@
+  epoch 1/15 loss 59.6888
+  epoch 2/15 loss 30.2306
+  epoch 3/15 loss 17.0812
+  epoch 4/15 loss 16.9614
+  epoch 5/15 loss 16.2968
+  epoch 6/15 loss 11.7625
+  epoch 7/15 loss 9.1496
+  epoch 8/15 loss 7.9557
+  epoch 9/15 loss 7.7589
+  epoch 10/15 loss 7.4010
+  epoch 11/15 loss 7.1371
+  epoch 12/15 loss 6.9770
+  epoch 13/15 loss 6.9396
+  epoch 14/15 loss 6.8415
+  epoch 15/15 loss 6.7983
+trained in 219s
+val_matched: {'pixel_mse_x1e3': 0.7971154451370239, 'angle_err_h1': 0.012148435089202532, 'angle_err_hH': 0.12420735742028086, 'angle_err_mean': 0.06721675567881524}
+decorrelated: {'pixel_mse_x1e3': 0.8119661211967468, 'angle_err_h1': 0.012159199577683742, 'angle_err_hH': 0.12296684134924396, 'angle_err_mean': 0.06665787181603908}
+ood_gravity: {'pixel_mse_x1e3': 2.047224760055542, 'angle_err_h1': 0.03547050955301982, 'angle_err_hH': 0.4097745399104444, 'angle_err_mean': 0.2256731479834884}
+ood_damping: {'pixel_mse_x1e3': 0.8726961612701416, 'angle_err_h1': 0.014100788668197254, 'angle_err_hH': 0.1466134483958491, 'angle_err_mean': 0.08117283832985396}
+probe R2: {'sin_theta': {'val_matched': 0.9954159138833715, 'decorrelated': 0.9955964091485519}, 'cos_theta': {'val_matched': 0.9911797268898083, 'decorrelated': 0.9915319484111225}, 'omega': {'val_matched': 0.9954821240077686, 'decorrelated': 0.9952904772983763}, 'gravity': {'val_matched': 0.03096770129901749, 'decorrelated': 0.021287542643495416}, 'damping': {'val_matched': 0.0029469045061859545, 'decorrelated': -0.01577878170251723}, 'redness': {'val_matched': -0.0017488533337495227, 'decorrelated': 0.002730760705698887}}
+intervention: {'mean_abs_angle_shift_hH': 0.004963560029864311, 'implied_g_shift_per_unit_redness': 0.0721593611765899, 'probe_g_shift_per_unit_redness': 0.010685116278032964, 'implied_g_corr_true': 0.09765642443425936, 'implied_g_corr_redness': 0.028344934004314645}
+/home/claude/paper/code/run.py:113: ConstantInputWarning: An input array is constant; the correlation coefficient is not defined.
+  "spearman_vs_error": float(spearmanr(s, errs).correlation)}
+/home/claude/paper/code/run.py:113: ConstantInputWarning: An input array is constant; the correlation coefficient is not defined.
+  "spearman_vs_error": float(spearmanr(s, errs).correlation)}
+monitor: {
+ "ood_gravity": {
+  "kinematic_consistency": {
+   "auroc_shift": 0.49898800000000004,
+   "spearman_vs_error": 0.10244362827151422
+  },
+  "pixel_knn": {
+   "auroc_shift": 0.5960584444444444,
+   "spearman_vs_error": 0.29861504570028674
+  },
+  "latent_mahalanobis": {
+   "auroc_shift": 0.5805666666666667,
+   "spearman_vs_error": 0.3185115251679472
+  },
+  "probe_physics_range": {
+   "auroc_shift": 0.5033333333333333,
+   "spearman_vs_error": 0.0767402282507381
+  },
+  "lagged_1step_residual": {
+   "auroc_shift": 0.6312275555555555,
+   "spearman_vs_error": 0.35839411848823527
+  }
+ },
+ "ood_damping": {
+  "kinematic_consistency": {
+   "auroc_shift": 0.44191777777777774,
+   "spearman_vs_error": 0.13864610296067809
+  },
+  "pixel_knn": {
+   "auroc_shift": 0.46878733333333333,
+   "spearman_vs_error": 0.21222420565479314
+  },
+  "latent_mahalanobis": {
+   "auroc_shift": 0.44175022222222227,
+   "spearman_vs_error": 0.31759012017668
+  },
+  "probe_physics_range": {
+   "auroc_shift": 0.5,
+   "spearman_vs_error": NaN
+  },
+  "lagged_1step_residual": {
+   "auroc_shift": 0.5001817777777777,
+   "spearman_vs_error": 0.14484411633210673
+  }
+ },
+ "decorrelated": {
+  "kinematic_consistency": {
+   "auroc_shift": 0.49263955555555555,
+   "spearman_vs_error": 0.21399639088848785
+  },
+  "pixel_knn": {
+   "auroc_shift": 0.5174737777777778,
+   "spearman_vs_error": 0.1796139995671499
+  },
+  "latent_mahalanobis": {
+   "auroc_shift": 0.5100213333333333,
+   "spearman_vs_error": 0.2200195515577279
+  },
+  "probe_physics_range": {
+   "auroc_shift": 0.5,
+   "spearman_vs_error": NaN
+  },
+  "lagged_1step_residual": {
+   "auroc_shift": 0.5123937777777778,
+   "spearman_vs_error": 0.17078460342051147
+  }
+ }
+}
+done 301s

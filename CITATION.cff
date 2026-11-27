@@ -1,0 +1,8 @@
+cff-version: 1.2.0
+title: "Why Physical AI Must Be Interpretable"
+message: "If you use this code, please cite the paper."
+authors:
+  - family-names: Challagundla
+    given-names: Bhavith Chandra
+    affiliation: "Elemental Research Group; New York University"
+date-released: 2026-11-27

@@ -12,7 +12,7 @@ It then demonstrates the argument on pixel-based world models.
 
 **Main empirical result.** Two pendulum world models are trained, one on data where bob color is confounded with gravity and one on causal data. The confounded model is *more accurate* on validation data, so validation-based model selection picks it in every seed. It fails once the confound breaks. Probes and interventions expose it using training data only. Exact numbers, per seed, are in [`VALIDATION.md`](VALIDATION.md) and in the PDF.
 
-**Status: 18/18 claims pass in every one of 5 seeds**, including:
+**Status: 21/21 claims pass in every one of 5 seeds**, including:
 - a bit-identical from-scratch rerun (determinism);
 - independent re-derivation of each headline claim (triangulation);
 - regeneration of every paper number from stored results.
@@ -22,13 +22,15 @@ An earlier full run with unseeded weight initialization (`code/results_unseeded_
 ## Repository layout
 
 ```
-main.tex, refs.bib        paper source         numbers.tex   all paper numbers (GENERATED, do not edit)
+main.tex, refs.bib        paper source (NeurIPS layout; neurips_replica.sty -> swap for official neurips_2026.sty)         numbers.tex   all paper numbers (GENERATED, do not edit)
 main.pdf                  compiled paper       fig_*.pdf     figures (GENERATED)
 code/wm.py                simulator, renderer, world model, training
 code/run.py               train one (condition, seed) and evaluate: behavior, probes, interventions, monitors
 code/posthoc.py           latent steering, probe geometry
 code/triangulate.py       independent re-derivation of every headline claim
-code/aggregate.py         results/*.json  ->  numbers.tex + figures
+code/planner.py           planner experiment testing Proposition 3 (+ Monte Carlo check of the closed form)
+code/aggregate.py         results/*.json  ->  numbers.tex
+code/figures.py           results/*.json  ->  all data figures (TeX Gyre Termes, NeurIPS widths)
 code/validate.py          executable claims  ->  VALIDATION.md  (non-zero exit on any failure)
 code/results/             per-seed metrics (JSON), checkpoints (.pt), training logs
 code/results_unseeded_init/  an earlier full run with unseeded weight init (kept as an independent replication)

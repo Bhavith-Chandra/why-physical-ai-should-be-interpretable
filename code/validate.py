@@ -42,6 +42,16 @@ if TR:
     check("T4", "Shortcut effect grows monotonically with colour dose", {s: v["T4_dose_response"]["conf_monotone"] for s, v in T.items()}, lambda v: v is True)
     check("T5", "Bootstrap 95% CIs separate validation and decorrelation gaps", {s: v["T5_bootstrap95"]["val_gap_excludes_0"] and v["T5_bootstrap95"]["decorr_gap_excludes_0"] for s, v in T.items()}, lambda v: v is True)
 
+if os.path.exists("results/planner.json"):
+    P = json.load(open("results/planner.json")); N = P["N"]
+    check("C10", "Planning optimism increases with N for both models (N=1 -> N=max, every seed)",
+          {int(s): min(P["seeds"][s][m][str(N[-1])]["optimism"] - P["seeds"][s][m]["1"]["optimism"] for m in ["clean", "confounded"]) for s in P["seeds"]}, lambda v: v > 0.05)
+    check("C11", "Under planning, shortcut model realizes higher cost than causal for N in 2..16",
+          {int(s): min(P["seeds"][s]["confounded"][str(n)]["realized"] - P["seeds"][s]["clean"][str(n)]["realized"] for n in [2, 4, 8, 16]) for s in P["seeds"]}, lambda v: v > 0)
+    G = P["gaussian_check"]
+    check("C12", "Monte Carlo optimism matches closed form sigma*E[max] within 1% (Gaussian errors)",
+          {0: max(abs(G[k]["monte_carlo"] - G[k]["exact_E_max"]) / max(G[k]["exact_E_max"], 1e-9) for k in G if k != "1")}, lambda v: v < 0.01)
+
 # determinism: an independent re-run of confounded seed 0 must reproduce the stored metrics
 if os.path.exists("rerun/confounded_s0.json"):
     a, b = json.load(open("results/confounded_s0.json")), json.load(open("rerun/confounded_s0.json"))
@@ -56,6 +66,7 @@ if os.path.exists("rerun/confounded_s0.json"):
 # paper numbers come only from aggregate.py: regenerate and diff
 before = open("../numbers.tex").read() if os.path.exists("../numbers.tex") else ""
 subprocess.run([sys.executable, "aggregate.py"], check=True, capture_output=True)
+subprocess.run([sys.executable, "figures.py"], check=True, capture_output=True)
 check("P1", "numbers.tex regenerated from results is identical to the committed one", {0: int(before == open("../numbers.tex").read())}, lambda v: v == 1)
 
 with open("../VALIDATION.md", "w") as f:

@@ -56,45 +56,23 @@ if os.path.exists("results/triangulation.json"):
     for i, d in enumerate([5, 10, 20, 30]):
         put(f"dose{['A','B','C','D'][i]}Co", [t["T4_dose_response"]["conf"][i] for t in TS])
         put(f"dose{['A','B','C','D'][i]}Cl", [t["T4_dose_response"]["clean"][i] for t in TS])
+
+# ---- planner (Prop. 3) macros
+if os.path.exists("results/planner.json"):
+    P = json.load(open("results/planner.json")); PS = list(P["seeds"]); NMAX = str(P["N"][-1])
+    for m, t in [("clean", "Cl"), ("confounded", "Co")]:
+        put(f"plOpt{t}", [P["seeds"][s][m][NMAX]["optimism"] for s in PS])
+        put(f"plReal{t}", [P["seeds"][s][m][NMAX]["realized"] for s in PS])
+        put(f"plPred{t}", [P["seeds"][s][m][NMAX]["predicted"] for s in PS])
+        put(f"plOptOne{t}", [P["seeds"][s][m]["1"]["optimism"] for s in PS])
+    put("plBest", [P["seeds"][s]["clean"][NMAX]["oracle_best"] for s in PS])
+    macros["plNmax"] = NMAX
+    macros["plRatio"] = f"{float(macros['plRealClMean'])/float(macros['plPredClMean']):.0f}"
+    G = P["gaussian_check"]; macros["gcMC"] = f"{G['1024']['monte_carlo']:.3f}"; macros["gcExact"] = f"{G['1024']['exact_E_max']:.3f}"
+    macros["gcAsym"] = f"{G['1024']['asymptote_sqrt_2logn']:.2f}"
 with open("../numbers.tex", "w") as f:
     for k, v in macros.items():
         f.write(f"\\newcommand{{\\{k}}}{{{v}}}\n")
 json.dump(macros, open("results/macros.json", "w"), indent=1)
 
-# ---------- figures
-plt.rcParams.update({"font.size": 9, "font.family": "serif", "mathtext.fontset": "cm", "axes.spines.top": False, "axes.spines.right": False})
-C = {"clean": "#3b6ea8", "confounded": "#c0504d"}
-fig, ax = plt.subplots(1, 3, figsize=(7.2, 2.3))
-splits = [("val_matched", "matched"), ("decorrelated", "decorr."), ("ood_gravity", "OOD $g$")]
-x = np.arange(len(splits)); w = 0.38
-for i, m in enumerate(["clean", "confounded"]):
-    v = np.array([[r[s]["angle_err_hH"] for s, _ in splits] for r in R[m]])
-    ax[0].bar(x + (i-0.5)*w, v.mean(0), w, yerr=v.std(0, ddof=1), color=C[m], label="causal-data model" if m == "clean" else "confounded-data model", capsize=2)
-ax[0].set_xticks(x); ax[0].set_xticklabels([l for _, l in splits]); ax[0].set_ylabel(r"angle error at $t{+}H$ (rad)")
-ax[0].set_title("(a) Behaviour", fontsize=9); ax[0].set_ylim(0, 0.62); ax[0].legend(frameon=False, fontsize=6.5, loc="upper left", ncol=1)
-for i, m in enumerate(["clean", "confounded"]):
-    v = np.array([r["intervention"]["mean_abs_angle_shift_hH"] for r in R[m]])
-    ax[1].bar(i, v.mean(), 0.6, yerr=v.std(ddof=1), color=C[m], capsize=2)
-ax[1].set_xticks([0, 1]); ax[1].set_xticklabels(["causal", "confounded"]); ax[1].set_ylabel("prediction shift (rad)")
-ax[1].set_title("(b) do(color) intervention", fontsize=9)
-for i, m in enumerate(["clean", "confounded"]):
-    v = np.array([r["probe_r2"]["gravity"]["val_matched"] for r in R[m]]); v2 = np.array([r["probe_r2"]["gravity"]["decorrelated"] for r in R[m]])
-    ax[2].bar(i - 0.2, v.mean(), 0.38, yerr=v.std(ddof=1), color=C[m], capsize=2)
-    ax[2].bar(i + 0.2, v2.mean(), 0.38, yerr=v2.std(ddof=1), color=C[m], alpha=0.45, hatch="//", capsize=2)
-ax[2].axhline(0, color="k", lw=0.6); ax[2].set_xticks([0, 1]); ax[2].set_xticklabels(["causal", "confounded"])
-ax[2].set_ylabel(r"gravity probe $R^2$"); ax[2].set_title("(c) Probe: matched / decorrelated", fontsize=9)
-plt.tight_layout(); plt.savefig("../fig_main.pdf", bbox_inches="tight")
-
-fig, ax = plt.subplots(figsize=(3.4, 2.7))
-scs = [("pixel_knn", "pixel kNN"), ("latent_mahalanobis", "latent Mahalanobis"), ("probe_physics_range", "probe: $g$ range"),
-       ("kinematic_consistency", "probe: kinematic"), ("lagged_1step_residual", "lagged residual$^\\dagger$")]
-groups = [("clean", "ood_gravity", "causal / OOD $g$"), ("clean", "ood_damping", "causal / OOD damping"),
-          ("confounded", "decorrelated", "confounded / decorr.")]
-y = np.arange(len(scs))[::-1]; w = 0.26; cols = ["#3b6ea8", "#7fa6d3", "#c0504d"]
-for j, (m, sh, lab) in enumerate(groups):
-    v = np.array([[r["monitor"][sh][k]["auroc_shift"] for k, _ in scs] for r in R[m]])
-    ax.barh(y - (j-1)*w, v.mean(0), w, xerr=v.std(0, ddof=1), color=cols[j], label=lab, capsize=1.5)
-ax.axvline(0.5, color="k", ls="--", lw=0.7); ax.set_xlim(0.3, 0.8); ax.set_yticks(y); ax.set_yticklabels([l for _, l in scs])
-ax.set_xlabel("AUROC (shifted vs. matched)"); ax.legend(frameon=False, fontsize=6.5, loc="lower center", bbox_to_anchor=(0.35, 1.0), ncol=2)
-plt.tight_layout(); plt.savefig("../fig_monitor.pdf", bbox_inches="tight")
 print(json.dumps(macros, indent=0))

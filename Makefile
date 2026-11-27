@@ -2,9 +2,9 @@
 SEEDS ?= 0 1 2 3 4
 PY ?= python
 
-.PHONY: all train posthoc triangulate aggregate validate paper smoke clean-rerun
+.PHONY: all train posthoc triangulate planner aggregate validate paper smoke clean-rerun
 
-all: train posthoc triangulate aggregate validate paper
+all: train posthoc triangulate planner aggregate validate paper
 
 train:
 	cd code && for s in $(SEEDS); do for m in clean confounded; do \
@@ -17,8 +17,11 @@ posthoc:
 triangulate:
 	cd code && $(PY) triangulate.py $(SEEDS)
 
+planner:
+	cd code && $(PY) planner.py
+
 aggregate:
-	cd code && $(PY) aggregate.py
+	cd code && $(PY) aggregate.py && $(PY) figures.py
 
 validate:
 	cd code && $(PY) validate.py

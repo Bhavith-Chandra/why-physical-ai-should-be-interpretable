@@ -1,0 +1,34 @@
+% neurips_replica.sty -- layout replica of the NeurIPS conference style (5.5in x 9in text block, 10pt Times,
+% ruled title box, "Preprint" footer). For submission, replace \usepackage{neurips_replica} with the official
+% \usepackage{neurips_2026} (or the current year's file); the document body needs no other change.
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{neurips_replica}[2026/11/27 NeurIPS layout replica]
+\RequirePackage[letterpaper,textwidth=5.5in,textheight=9in,top=1in,headheight=12pt,headsep=25pt,footskip=30pt]{geometry}
+\RequirePackage{times}
+\RequirePackage[T1]{fontenc}
+\RequirePackage{microtype}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt}
+\renewcommand{\normalsize}{\fontsize{10}{11}\selectfont}
+\normalsize
+% section headings: NeurIPS uses bold, flush left, 12/10/10pt
+\renewcommand{\section}{\@startsection{section}{1}{\z@}{-2.0ex plus -0.5ex minus -0.2ex}{1.5ex plus 0.3ex minus 0.2ex}{\large\bfseries\raggedright}}
+\renewcommand{\subsection}{\@startsection{subsection}{2}{\z@}{-1.8ex plus -0.5ex minus -0.2ex}{0.8ex plus 0.2ex}{\normalsize\bfseries\raggedright}}
+\renewcommand{\paragraph}{\@startsection{paragraph}{4}{\z@}{1.5ex plus 0.5ex minus 0.2ex}{-1em}{\normalsize\bfseries}}
+% title block: thick rules above and below a centered 17pt bold title
+\renewcommand{\@maketitle}{%
+  \vbox{\hsize\textwidth\linewidth\hsize\vskip 0.1in
+    \hrule height 4pt\vskip 0.25in\vskip -\parskip
+    \centering{\LARGE\bfseries \@title\par}\vskip 0.29in\vskip -\parskip
+    \hrule height 1pt\vskip 0.09in
+    \def\And{\end{tabular}\hfil\linebreak[0]\hfil\begin{tabular}[t]{c}\bfseries\ignorespaces}%
+    \begin{tabular}[t]{c}\bfseries\ignorespaces\@author\end{tabular}%
+    \vskip 0.3in minus 0.1in}}
+\renewenvironment{abstract}{%
+  \centerline{\large\bfseries Abstract}\vspace{0.5ex}%
+  \begin{quote}}{\par\end{quote}\vskip 1ex}
+\def\ps@neuripsfoot{\def\@oddfoot{\hfil\thepage\hfil}\def\@evenfoot{\@oddfoot}\def\@oddhead{}\def\@evenhead{}}
+\AtBeginDocument{\pagestyle{neuripsfoot}\thispagestyle{neuripsfirst}}
+\def\ps@neuripsfirst{\def\@oddfoot{\parbox{\textwidth}{\small Preprint. Under review.\hfill}}\def\@evenfoot{\@oddfoot}\def\@oddhead{}\def\@evenhead{}}
+\RequirePackage[font=small,labelfont=bf,skip=4pt]{caption}
+\endinput

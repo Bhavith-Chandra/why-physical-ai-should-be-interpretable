@@ -2,6 +2,11 @@
 
 Bugs found by the validation and triangulation suite are recorded here, together with how each one affected the reported results.
 
+## v1.1 (2026-11-27)
+- NeurIPS-format rewrite, with new figures (teaser of causal graphs, agent architecture, model inputs, planner).
+- **New experiment:** a planner using the trained models confirms Proposition 3. At N=64, realized cost is about 12x the predicted cost. New claims C10-C12; 21/21 pass.
+- The shortcut model is worse under planning for N=2..16 in every seed; at N=32-64 one seed reverses, so the claim is scoped to N<=16.
+
 ## v1.0 (2026-11-27)
 
 ### Fixed
